@@ -59,6 +59,15 @@ MULTI_AGENT_METADRIVE_DEFAULT_CONFIG = dict(
     camera_height=4,
     interface_panel=["dashboard"],
     truncate_as_terminate=True,
+
+    # ===== New added ====
+    bev_lidar_obs=True,
+    frame_skip=5,
+    frame_stack=3,
+    post_stack=5,
+    norm_pixel=True,
+    resolution_size=224,
+    distance=40,
 )
 
 
@@ -129,6 +138,14 @@ class MultiAgentMetaDrive(MetaDriveEnv):
 
     def step(self, actions):
         o, r, tm, tc, i = super(MultiAgentMetaDrive, self).step(actions)
+        for agent, info in i.items():
+            info['position'] = self.agents[agent].position
+            info['heading'] = self.agents[agent].heading
+            info['steering'] = self.agents[agent].steering
+            info['velocity_km_h'] = self.agents[agent].velocity_km_h
+            info['max_steering'] = self.agents[agent].max_steering
+            info['max_speed_km_h'] = self.agents[agent].max_speed_km_h
+            info['checkpoints'] = self.agents[agent].navigation.get_checkpoints()
         o, r, tm, tc, i = self._after_vehicle_done(o, r, tm, tc, i)
 
         # Update respawn manager
@@ -140,6 +157,13 @@ class MultiAgentMetaDrive(MetaDriveEnv):
                 o[new_id] = new_obs
                 r[new_id] = 0.0
                 i[new_id] = new_info_dict[new_id]
+                i[new_id]['position'] =  self.agents[new_id].position
+                i[new_id]['heading'] = self.agents[new_id].heading
+                i[new_id]['steering'] = self.agents[new_id].steering
+                i[new_id]['velocity_km_h'] = self.agents[new_id].velocity_km_h
+                i[new_id]['max_steering'] = self.agents[new_id].max_steering
+                i[new_id]['max_speed_km_h'] = self.agents[new_id].max_speed_km_h
+                i[new_id]['checkpoints'] = self.agents[new_id].navigation.get_checkpoints()
                 tm[new_id] = False
                 tc[new_id] = False
 

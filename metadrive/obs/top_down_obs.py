@@ -31,7 +31,9 @@ class TopDownObservation(BaseObservation):
 
     def __init__(self, vehicle_config, clip_rgb: bool, onscreen, resolution=None, max_distance=50):
         self.resolution = resolution or self.RESOLUTION
-        super(TopDownObservation, self).__init__(vehicle_config)
+        # super(TopDownObservation, self).__init__(vehicle_config)
+        BaseObservation.__init__(self, vehicle_config)
+
         self.norm_pixel = clip_rgb
         self.num_stacks = 3
 

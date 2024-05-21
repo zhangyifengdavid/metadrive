@@ -25,6 +25,7 @@ from metadrive.obs.image_obs import ImageStateObservation
 from metadrive.obs.observation_base import BaseObservation
 from metadrive.obs.observation_base import DummyObservation
 from metadrive.obs.state_obs import LidarStateObservation
+from metadrive.obs.BEV_and_Lidar_obs import BEVLidarObservation
 from metadrive.policy.env_input_policy import EnvInputPolicy
 from metadrive.scenario.utils import convert_recorded_scenario_exported
 from metadrive.utils import Config, merge_dicts, get_np_random, concat_step_infos
@@ -266,7 +267,10 @@ BASE_DEFAULT_CONFIG = dict(
     force_reuse_object_name=False,
 
     # ===== randomization =====
-    num_scenarios=1  # the number of scenarios in this environment
+    num_scenarios=1,  # the number of scenarios in this environment
+
+    # ===== New added =====
+    bev_lidar_obs=False  # BEV and Lidar Joint observation
 )
 
 
@@ -278,7 +282,7 @@ class BaseEnv(gym.Env):
     def default_config(cls) -> Config:
         return Config(BASE_DEFAULT_CONFIG)
 
-    # ===== Intialization =====
+    # ===== Initialization =====
     def __init__(self, config: dict = None):
         if config is None:
             config = {}
@@ -301,6 +305,7 @@ class BaseEnv(gym.Env):
 
         # observation and action space
         self.agent_manager = self._get_agent_manager()
+        self.is_bev_lidar_obs = self.config['bev_lidar_obs']
 
         # lazy initialization, create the main simulation in the lazy_init() func
         # self.engine: Optional[BaseEngine] = None
@@ -666,6 +671,8 @@ class BaseEnv(gym.Env):
         else:
             if self.config["agent_observation"]:
                 o = self.config["agent_observation"](self.config)
+            elif self.config['bev_lidar_obs']:
+                o = BEVLidarObservation(self.config)
             else:
                 img_obs = self.config["image_observation"]
                 o = ImageStateObservation(self.config) if img_obs else LidarStateObservation(self.config)
@@ -699,6 +706,8 @@ class BaseEnv(gym.Env):
         ret = self.agent_manager.get_observation_spaces()
         if not self.is_multi_agent:
             return next(iter(ret.values()))
+        elif self.is_bev_lidar_obs:
+            return ret
         else:
             return gym.spaces.Dict(ret)
 
